@@ -46,11 +46,11 @@ gradle.projectsEvaluated {
                 val clazz = androidExt.javaClass
                 try {
                     val compileSdkVersionMethod = clazz.getMethod("setCompileSdkVersion", Int::class.java)
-                    compileSdkVersionMethod.invoke(androidExt, 34)
+                    compileSdkVersionMethod.invoke(androidExt, 36)
                 } catch (e: Exception) {
                     try {
                         val compileSdkMethod = clazz.getMethod("setCompileSdk", Int::class.java)
-                        compileSdkMethod.invoke(androidExt, 34)
+                        compileSdkMethod.invoke(androidExt, 36)
                     } catch (e2: Exception) {
                     }
                 }
