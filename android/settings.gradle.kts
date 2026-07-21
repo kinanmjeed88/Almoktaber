@@ -46,7 +46,7 @@ gradle.projectsEvaluated {
                 val clazz = androidExt.javaClass
                 try {
                     val compileSdkVersionMethod = clazz.getMethod("setCompileSdkVersion", Int::class.java)
-                    compileSdkVersionMethod.invoke(androidExt, 34) // Force compileSdk to 34 to avoid lStar resource error from higher SDK version
+                    compileSdkVersionMethod.invoke(androidExt, 34)
                 } catch (e: Exception) {
                     try {
                         val compileSdkMethod = clazz.getMethod("setCompileSdk", Int::class.java)
