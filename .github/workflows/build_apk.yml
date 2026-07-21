@@ -32,10 +32,49 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release 2>&1 | tee full_build.log
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Extract Error Logs
+        if: failure()
+        run: |
+          tail -n 150 full_build.log > build_error.log
+          echo "Extracted last 150 lines of build failure to build_error.log"
+
+      - name: Open Issue on Failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ERROR_CONTENT=$(cat build_error.log)
+          gh issue create \
+            --title "Build Failure on ${{ github.ref_name }}" \
+            --body "The Flutter APK build failed. Here are the last 150 lines of the build log:
+
+          \`\`\`text
+          $ERROR_CONTENT
+          \`\`\`
+          " \
+            --label "jules-fix-required"
+
+      - name: Setup Python for Auto-Fix
+        if: failure()
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python Dependencies
+        if: failure()
+        run: pip install requests
+
+      - name: Run Auto-Fix Analyzer
+        if: failure()
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/auto_fix_analyzer.py
