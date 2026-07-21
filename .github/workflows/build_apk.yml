@@ -64,22 +64,21 @@ jobs:
           \`\`\`text
           $ERROR_CONTENT
           \`\`\`
-          " \
-            --label "jules-fix-required"
+          "
 
-      - name: Setup Python for Auto-Fix
-        if: failure()
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+      # - name: Setup Python for Auto-Fix
+      #   if: failure()
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.10'
 
-      - name: Install Python Dependencies
-        if: failure()
-        run: pip install requests
+      # - name: Install Python Dependencies
+      #   if: failure()
+      #   run: pip install requests
 
-      - name: Run Auto-Fix Analyzer
-        if: failure()
-        env:
-          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/auto_fix_analyzer.py
+      # - name: Run Auto-Fix Analyzer
+      #   if: failure()
+      #   env:
+      #     JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: python scripts/auto_fix_analyzer.py
