@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../backup/backup_service.dart';
 import '../camera/presentation/camera_screen.dart';
 import '../lab/presentation/labs_screen.dart';
-import '../maintenance/presentation/maintenance_screen.dart';
-import '../statistics/presentation/statistics_screen.dart';
 import '../../core/theme/glassmorphism.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -17,18 +14,6 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('لوحة التحكم - إدارة المختبرات'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cloud_upload),
-            onPressed: () => ref.read(backupServiceProvider).exportData(context),
-            tooltip: 'نسخ احتياطي',
-          ),
-          IconButton(
-            icon: const Icon(Icons.cloud_download),
-            onPressed: () => ref.read(backupServiceProvider).importData(context),
-            tooltip: 'استعادة',
-          ),
-        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -46,28 +31,14 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             _buildGridItem(
               context,
-              title: 'المختبرات',
+              title: 'المختبرات والأجهزة',
               icon: Icons.science,
               color: Colors.teal,
               screen: const LabsScreen(),
             ),
             _buildGridItem(
               context,
-              title: 'الصيانة',
-              icon: Icons.build,
-              color: Colors.orange,
-              screen: const MaintenanceScreen(),
-            ),
-            _buildGridItem(
-              context,
-              title: 'الإحصاءات',
-              icon: Icons.bar_chart,
-              color: Colors.purple,
-              screen: const StatisticsScreen(),
-            ),
-            _buildGridItem(
-              context,
-              title: 'الكاميرا',
+              title: 'الكاميرا الحرة',
               icon: Icons.camera_alt,
               color: Colors.blue,
               screen: const CameraScreen(),

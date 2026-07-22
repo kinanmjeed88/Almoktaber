@@ -10,15 +10,9 @@ class Lab {
 
   late String location;
 
-  late int capacity;
-
-  List<String> equipment = [];
-
   Lab({
     required this.name,
     required this.location,
-    required this.capacity,
-    this.equipment = const [],
   });
 
   Lab.empty();
@@ -28,8 +22,6 @@ class Lab {
       'id': id,
       'name': name,
       'location': location,
-      'capacity': capacity,
-      'equipment': equipment,
     };
   }
 
@@ -37,8 +29,6 @@ class Lab {
     return Lab(
       name: json['name'] as String,
       location: json['location'] as String,
-      capacity: json['capacity'] as int,
-      equipment: (json['equipment'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
     )..id = json['id'] as int;
   }
 }

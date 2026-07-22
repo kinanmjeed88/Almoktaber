@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'device.dart';
 
 part 'maintenance_log.g.dart';
 
@@ -6,44 +7,17 @@ part 'maintenance_log.g.dart';
 class MaintenanceLog {
   Id id = Isar.autoIncrement;
 
-  late String title;
+  late String fault;
+  late String solution;
+  late DateTime maintenanceDate;
 
-  late String description;
-
-  late DateTime date;
-
-  late int labId;
-
-  String? imagePath;
+  final device = IsarLink<Device>();
 
   MaintenanceLog({
-    required this.title,
-    required this.description,
-    required this.date,
-    required this.labId,
-    this.imagePath,
+    required this.fault,
+    required this.solution,
+    required this.maintenanceDate,
   });
 
   MaintenanceLog.empty();
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'date': date.toIso8601String(),
-      'labId': labId,
-      'imagePath': imagePath,
-    };
-  }
-
-  factory MaintenanceLog.fromJson(Map<String, dynamic> json) {
-    return MaintenanceLog(
-      title: json['title'] as String,
-      description: json['description'] as String,
-      date: DateTime.parse(json['date'] as String),
-      labId: json['labId'] as int,
-      imagePath: json['imagePath'] as String?,
-    )..id = json['id'] as int;
-  }
 }

@@ -17,29 +17,19 @@ const MaintenanceLogSchema = CollectionSchema(
   name: r'MaintenanceLog',
   id: 2311724503968887616,
   properties: {
-    r'date': PropertySchema(
+    r'fault': PropertySchema(
       id: 0,
-      name: r'date',
+      name: r'fault',
+      type: IsarType.string,
+    ),
+    r'maintenanceDate': PropertySchema(
+      id: 1,
+      name: r'maintenanceDate',
       type: IsarType.dateTime,
     ),
-    r'description': PropertySchema(
-      id: 1,
-      name: r'description',
-      type: IsarType.string,
-    ),
-    r'imagePath': PropertySchema(
+    r'solution': PropertySchema(
       id: 2,
-      name: r'imagePath',
-      type: IsarType.string,
-    ),
-    r'labId': PropertySchema(
-      id: 3,
-      name: r'labId',
-      type: IsarType.long,
-    ),
-    r'title': PropertySchema(
-      id: 4,
-      name: r'title',
+      name: r'solution',
       type: IsarType.string,
     )
   },
@@ -49,7 +39,14 @@ const MaintenanceLogSchema = CollectionSchema(
   deserializeProp: _maintenanceLogDeserializeProp,
   idName: r'id',
   indexes: {},
-  links: {},
+  links: {
+    r'device': LinkSchema(
+      id: -753380273260056967,
+      name: r'device',
+      target: r'Device',
+      single: true,
+    )
+  },
   embeddedSchemas: {},
   getId: _maintenanceLogGetId,
   getLinks: _maintenanceLogGetLinks,
@@ -63,14 +60,8 @@ int _maintenanceLogEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
-  bytesCount += 3 + object.description.length * 3;
-  {
-    final value = object.imagePath;
-    if (value != null) {
-      bytesCount += 3 + value.length * 3;
-    }
-  }
-  bytesCount += 3 + object.title.length * 3;
+  bytesCount += 3 + object.fault.length * 3;
+  bytesCount += 3 + object.solution.length * 3;
   return bytesCount;
 }
 
@@ -80,11 +71,9 @@ void _maintenanceLogSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.date);
-  writer.writeString(offsets[1], object.description);
-  writer.writeString(offsets[2], object.imagePath);
-  writer.writeLong(offsets[3], object.labId);
-  writer.writeString(offsets[4], object.title);
+  writer.writeString(offsets[0], object.fault);
+  writer.writeDateTime(offsets[1], object.maintenanceDate);
+  writer.writeString(offsets[2], object.solution);
 }
 
 MaintenanceLog _maintenanceLogDeserialize(
@@ -94,11 +83,9 @@ MaintenanceLog _maintenanceLogDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = MaintenanceLog(
-    date: reader.readDateTime(offsets[0]),
-    description: reader.readString(offsets[1]),
-    imagePath: reader.readStringOrNull(offsets[2]),
-    labId: reader.readLong(offsets[3]),
-    title: reader.readString(offsets[4]),
+    fault: reader.readString(offsets[0]),
+    maintenanceDate: reader.readDateTime(offsets[1]),
+    solution: reader.readString(offsets[2]),
   );
   object.id = id;
   return object;
@@ -112,14 +99,10 @@ P _maintenanceLogDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
-    case 1:
       return (reader.readString(offset)) as P;
+    case 1:
+      return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readStringOrNull(offset)) as P;
-    case 3:
-      return (reader.readLong(offset)) as P;
-    case 4:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -131,12 +114,13 @@ Id _maintenanceLogGetId(MaintenanceLog object) {
 }
 
 List<IsarLinkBase<dynamic>> _maintenanceLogGetLinks(MaintenanceLog object) {
-  return [];
+  return [object.device];
 }
 
 void _maintenanceLogAttach(
     IsarCollection<dynamic> col, Id id, MaintenanceLog object) {
   object.id = id;
+  object.device.attach(col, col.isar.collection<Device>(), r'device', id);
 }
 
 extension MaintenanceLogQueryWhereSort
@@ -223,69 +207,13 @@ extension MaintenanceLogQueryWhere
 extension MaintenanceLogQueryFilter
     on QueryBuilder<MaintenanceLog, MaintenanceLog, QFilterCondition> {
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      dateEqualTo(DateTime value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'date',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      dateGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'date',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      dateLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'date',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      dateBetween(
-    DateTime lower,
-    DateTime upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'date',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionEqualTo(
+      faultEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'description',
+        property: r'fault',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -293,7 +221,7 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionGreaterThan(
+      faultGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -301,7 +229,7 @@ extension MaintenanceLogQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'description',
+        property: r'fault',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -309,7 +237,7 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionLessThan(
+      faultLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -317,7 +245,7 @@ extension MaintenanceLogQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'description',
+        property: r'fault',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -325,7 +253,7 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionBetween(
+      faultBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -334,7 +262,7 @@ extension MaintenanceLogQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'description',
+        property: r'fault',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -345,13 +273,13 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionStartsWith(
+      faultStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'description',
+        property: r'fault',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -359,13 +287,13 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionEndsWith(
+      faultEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'description',
+        property: r'fault',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -373,10 +301,10 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionContains(String value, {bool caseSensitive = true}) {
+      faultContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
-        property: r'description',
+        property: r'fault',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -384,10 +312,10 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionMatches(String pattern, {bool caseSensitive = true}) {
+      faultMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
-        property: r'description',
+        property: r'fault',
         wildcard: pattern,
         caseSensitive: caseSensitive,
       ));
@@ -395,20 +323,20 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionIsEmpty() {
+      faultIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'description',
+        property: r'fault',
         value: '',
       ));
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      descriptionIsNotEmpty() {
+      faultIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'description',
+        property: r'fault',
         value: '',
       ));
     });
@@ -470,207 +398,53 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'imagePath',
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'imagePath',
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
+      maintenanceDateEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'imagePath',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'imagePath',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'imagePath',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'imagePath',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'imagePath',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'imagePath',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'imagePath',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'imagePath',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'imagePath',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      imagePathIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'imagePath',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      labIdEqualTo(int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'labId',
+        property: r'maintenanceDate',
         value: value,
       ));
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      labIdGreaterThan(
-    int value, {
+      maintenanceDateGreaterThan(
+    DateTime value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'labId',
+        property: r'maintenanceDate',
         value: value,
       ));
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      labIdLessThan(
-    int value, {
+      maintenanceDateLessThan(
+    DateTime value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'labId',
+        property: r'maintenanceDate',
         value: value,
       ));
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      labIdBetween(
-    int lower,
-    int upper, {
+      maintenanceDateBetween(
+    DateTime lower,
+    DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'labId',
+        property: r'maintenanceDate',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -680,13 +454,13 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleEqualTo(
+      solutionEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'title',
+        property: r'solution',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -694,7 +468,7 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleGreaterThan(
+      solutionGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -702,7 +476,7 @@ extension MaintenanceLogQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'title',
+        property: r'solution',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -710,7 +484,7 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleLessThan(
+      solutionLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -718,7 +492,7 @@ extension MaintenanceLogQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'title',
+        property: r'solution',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -726,7 +500,7 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleBetween(
+      solutionBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -735,7 +509,7 @@ extension MaintenanceLogQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'title',
+        property: r'solution',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -746,13 +520,13 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleStartsWith(
+      solutionStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'title',
+        property: r'solution',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -760,13 +534,13 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleEndsWith(
+      solutionEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'title',
+        property: r'solution',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -774,10 +548,10 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleContains(String value, {bool caseSensitive = true}) {
+      solutionContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
-        property: r'title',
+        property: r'solution',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -785,10 +559,10 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleMatches(String pattern, {bool caseSensitive = true}) {
+      solutionMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
-        property: r'title',
+        property: r'solution',
         wildcard: pattern,
         caseSensitive: caseSensitive,
       ));
@@ -796,20 +570,20 @@ extension MaintenanceLogQueryFilter
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleIsEmpty() {
+      solutionIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'title',
+        property: r'solution',
         value: '',
       ));
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
-      titleIsNotEmpty() {
+      solutionIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'title',
+        property: r'solution',
         value: '',
       ));
     });
@@ -820,99 +594,75 @@ extension MaintenanceLogQueryObject
     on QueryBuilder<MaintenanceLog, MaintenanceLog, QFilterCondition> {}
 
 extension MaintenanceLogQueryLinks
-    on QueryBuilder<MaintenanceLog, MaintenanceLog, QFilterCondition> {}
+    on QueryBuilder<MaintenanceLog, MaintenanceLog, QFilterCondition> {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition> device(
+      FilterQuery<Device> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.link(q, r'device');
+    });
+  }
+
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterFilterCondition>
+      deviceIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.linkLength(r'device', 0, true, 0, true);
+    });
+  }
+}
 
 extension MaintenanceLogQuerySortBy
     on QueryBuilder<MaintenanceLog, MaintenanceLog, QSortBy> {
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByDate() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByFault() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'date', Sort.asc);
+      return query.addSortBy(r'fault', Sort.asc);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByDateDesc() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByFaultDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'date', Sort.desc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
-      sortByDescription() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'description', Sort.asc);
+      return query.addSortBy(r'fault', Sort.desc);
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
-      sortByDescriptionDesc() {
+      sortByMaintenanceDate() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'description', Sort.desc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByImagePath() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'imagePath', Sort.asc);
+      return query.addSortBy(r'maintenanceDate', Sort.asc);
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
-      sortByImagePathDesc() {
+      sortByMaintenanceDateDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'imagePath', Sort.desc);
+      return query.addSortBy(r'maintenanceDate', Sort.desc);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByLabId() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortBySolution() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'labId', Sort.asc);
+      return query.addSortBy(r'solution', Sort.asc);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByLabIdDesc() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
+      sortBySolutionDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'labId', Sort.desc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByTitle() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'title', Sort.asc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> sortByTitleDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'title', Sort.desc);
+      return query.addSortBy(r'solution', Sort.desc);
     });
   }
 }
 
 extension MaintenanceLogQuerySortThenBy
     on QueryBuilder<MaintenanceLog, MaintenanceLog, QSortThenBy> {
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByDate() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByFault() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'date', Sort.asc);
+      return query.addSortBy(r'fault', Sort.asc);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByDateDesc() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByFaultDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'date', Sort.desc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
-      thenByDescription() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'description', Sort.asc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
-      thenByDescriptionDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'description', Sort.desc);
+      return query.addSortBy(r'fault', Sort.desc);
     });
   }
 
@@ -928,76 +678,54 @@ extension MaintenanceLogQuerySortThenBy
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByImagePath() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
+      thenByMaintenanceDate() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'imagePath', Sort.asc);
+      return query.addSortBy(r'maintenanceDate', Sort.asc);
     });
   }
 
   QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
-      thenByImagePathDesc() {
+      thenByMaintenanceDateDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'imagePath', Sort.desc);
+      return query.addSortBy(r'maintenanceDate', Sort.desc);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByLabId() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenBySolution() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'labId', Sort.asc);
+      return query.addSortBy(r'solution', Sort.asc);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByLabIdDesc() {
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy>
+      thenBySolutionDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'labId', Sort.desc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByTitle() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'title', Sort.asc);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QAfterSortBy> thenByTitleDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'title', Sort.desc);
+      return query.addSortBy(r'solution', Sort.desc);
     });
   }
 }
 
 extension MaintenanceLogQueryWhereDistinct
     on QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> {
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctByDate() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'date');
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctByDescription(
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctByFault(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'description', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'fault', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctByImagePath(
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct>
+      distinctByMaintenanceDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'maintenanceDate');
+    });
+  }
+
+  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctBySolution(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'imagePath', caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctByLabId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'labId');
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, MaintenanceLog, QDistinct> distinctByTitle(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'title', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'solution', caseSensitive: caseSensitive);
     });
   }
 }
@@ -1010,33 +738,22 @@ extension MaintenanceLogQueryProperty
     });
   }
 
-  QueryBuilder<MaintenanceLog, DateTime, QQueryOperations> dateProperty() {
+  QueryBuilder<MaintenanceLog, String, QQueryOperations> faultProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'date');
+      return query.addPropertyName(r'fault');
     });
   }
 
-  QueryBuilder<MaintenanceLog, String, QQueryOperations> descriptionProperty() {
+  QueryBuilder<MaintenanceLog, DateTime, QQueryOperations>
+      maintenanceDateProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'description');
+      return query.addPropertyName(r'maintenanceDate');
     });
   }
 
-  QueryBuilder<MaintenanceLog, String?, QQueryOperations> imagePathProperty() {
+  QueryBuilder<MaintenanceLog, String, QQueryOperations> solutionProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'imagePath');
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, int, QQueryOperations> labIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'labId');
-    });
-  }
-
-  QueryBuilder<MaintenanceLog, String, QQueryOperations> titleProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'title');
+      return query.addPropertyName(r'solution');
     });
   }
 }
