@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.lab_management"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
