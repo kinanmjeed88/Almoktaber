@@ -10,7 +10,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await NotificationService().init();
-  await NotificationService().requestPermissions();
 
   final isar = await initIsar();
 
