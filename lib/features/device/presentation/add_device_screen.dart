@@ -7,8 +7,9 @@ import '../data/device_repository.dart';
 
 class AddDeviceScreen extends ConsumerStatefulWidget {
   final Lab lab;
+  final Device? device;
 
-  const AddDeviceScreen({super.key, required this.lab});
+  const AddDeviceScreen({super.key, required this.lab, this.device});
 
   @override
   ConsumerState<AddDeviceScreen> createState() => _AddDeviceScreenState();
@@ -27,6 +28,22 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
 
   DateTime _creationDate = DateTime.now();
   DateTime _nextMaintenanceDate = DateTime.now().add(const Duration(days: 30));
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.device != null) {
+      _nameController.text = widget.device!.name;
+      _typeController.text = widget.device!.type;
+      _quantityController.text = widget.device!.quantity.toString();
+      _phoneController.text = widget.device!.phoneNumber;
+      _materialCostController.text = widget.device!.materialCost.toString();
+      _testsCountController.text = widget.device!.testsCount.toString();
+      _notesController.text = widget.device!.notes ?? '';
+      _creationDate = widget.device!.creationDate;
+      _nextMaintenanceDate = widget.device!.nextMaintenanceDate;
+    }
+  }
 
   @override
   void dispose() {
@@ -54,23 +71,45 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
 
   void _saveDevice() async {
     if (_formKey.currentState!.validate()) {
-      final newDevice = Device(
-        name: _nameController.text,
-        type: _typeController.text,
-        quantity: int.tryParse(_quantityController.text) ?? 1,
-        phoneNumber: _phoneController.text,
-        materialCost: double.tryParse(_materialCostController.text) ?? 0.0,
-        testsCount: int.tryParse(_testsCountController.text) ?? 0,
-        creationDate: _creationDate,
-        nextMaintenanceDate: _nextMaintenanceDate,
-        notes: _notesController.text.isEmpty ? null : _notesController.text,
-      );
+      try {
+        if (widget.device != null) {
+          widget.device!.name = _nameController.text;
+          widget.device!.type = _typeController.text;
+          widget.device!.quantity = int.tryParse(_quantityController.text) ?? 1;
+          widget.device!.phoneNumber = _phoneController.text;
+          widget.device!.materialCost = double.tryParse(_materialCostController.text) ?? 0.0;
+          widget.device!.testsCount = int.tryParse(_testsCountController.text) ?? 0;
+          widget.device!.creationDate = _creationDate;
+          widget.device!.nextMaintenanceDate = _nextMaintenanceDate;
+          widget.device!.notes = _notesController.text.isEmpty ? null : _notesController.text;
 
-      await ref.read(deviceRepositoryProvider).addDevice(newDevice, widget.lab);
-      ref.invalidate(devicesByLabProvider(widget.lab.id));
+          await ref.read(deviceRepositoryProvider).updateDevice(widget.device!);
+        } else {
+          final newDevice = Device(
+            name: _nameController.text,
+            type: _typeController.text,
+            quantity: int.tryParse(_quantityController.text) ?? 1,
+            phoneNumber: _phoneController.text,
+            materialCost: double.tryParse(_materialCostController.text) ?? 0.0,
+            testsCount: int.tryParse(_testsCountController.text) ?? 0,
+            creationDate: _creationDate,
+            nextMaintenanceDate: _nextMaintenanceDate,
+            notes: _notesController.text.isEmpty ? null : _notesController.text,
+          );
 
-      if (mounted) {
-        Navigator.pop(context);
+          await ref.read(deviceRepositoryProvider).addDevice(newDevice, widget.lab);
+        }
+
+        ref.invalidate(devicesByLabProvider(widget.lab.id));
+
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الحفظ بنجاح')));
+        }
+      } catch (e) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+        }
       }
     }
   }
@@ -87,7 +126,7 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.teal.shade50, Colors.teal.shade200],
+            colors: [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)],
           ),
         ),
         child: Padding(
@@ -98,42 +137,42 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'اسم الجهاز', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'اسم الجهاز', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   validator: (value) => value == null || value.isEmpty ? 'يرجى إدخال اسم الجهاز' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _typeController,
-                  decoration: const InputDecoration(labelText: 'نوع الجهاز', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'نوع الجهاز', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   validator: (value) => value == null || value.isEmpty ? 'يرجى إدخال نوع الجهاز' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _quantityController,
-                  decoration: const InputDecoration(labelText: 'العدد', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'العدد', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'رقم الهاتف', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'رقم الهاتف', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _materialCostController,
-                  decoration: const InputDecoration(labelText: 'سعر المواد', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'سعر المواد', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _testsCountController,
-                  decoration: const InputDecoration(labelText: 'عدد الفحوصات', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'عدد الفحوصات', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
                 ListTile(
-                  tileColor: Colors.white70,
+                  tileColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                   title: const Text('تاريخ الإنشاء'),
                   subtitle: Text(_creationDate.toLocal().toString().split(' ')[0]),
                   trailing: const Icon(Icons.calendar_today),
@@ -142,12 +181,12 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _notesController,
-                  decoration: const InputDecoration(labelText: 'الملاحظات', filled: true, fillColor: Colors.white70),
+                  decoration: InputDecoration(labelText: 'الملاحظات', filled: true, fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 12),
                 ListTile(
-                  tileColor: Colors.white70,
+                  tileColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                   title: const Text('موعد الصيانة الدورية'),
                   subtitle: Text(_nextMaintenanceDate.toLocal().toString().split(' ')[0]),
                   trailing: const Icon(Icons.calendar_today),
