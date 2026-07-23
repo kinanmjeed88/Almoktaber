@@ -1,7 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+
 import 'package:isar/isar.dart';
 
 import '../../../core/models/lab.dart';
+import '../../../core/models/device.dart';
+import '../../../core/models/maintenance_log.dart';
+import '../../../core/models/photo_record.dart';
 import '../../../core/providers/db_provider.dart';
 
 final labRepositoryProvider = Provider<LabRepository>((ref) {
@@ -33,7 +38,32 @@ class LabRepository {
 
   Future<void> deleteLab(int id) async {
     await isar.writeTxn(() async {
-      await isar.labs.delete(id);
+      final lab = await isar.labs.get(id);
+      if (lab != null) {
+        final devices = await isar.devices.filter().lab((q) => q.idEqualTo(id)).findAll();
+        for (var device in devices) {
+          final photos = await isar.photoRecords.filter().device((q) => q.idEqualTo(device.id)).findAll();
+          for (var photo in photos) {
+            if (File(photo.imagePath).existsSync()) {
+              File(photo.imagePath).deleteSync();
+            }
+          }
+          if (photos.isNotEmpty) {
+            await isar.photoRecords.deleteAll(photos.map((e) => e.id).toList());
+          }
+
+          final logs = await isar.maintenanceLogs.filter().device((q) => q.idEqualTo(device.id)).findAll();
+          if (logs.isNotEmpty) {
+             await isar.maintenanceLogs.deleteAll(logs.map((e) => e.id).toList());
+          }
+        }
+
+        if (devices.isNotEmpty) {
+          await isar.devices.deleteAll(devices.map((e) => e.id).toList());
+        }
+
+        await isar.labs.delete(id);
+      }
     });
   }
 

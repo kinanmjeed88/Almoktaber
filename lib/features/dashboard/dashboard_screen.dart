@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../camera/presentation/camera_screen.dart';
 import '../lab/presentation/labs_screen.dart';
 import '../../core/theme/glassmorphism.dart';
 import '../../core/services/notification_service.dart';
@@ -31,11 +30,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.blueGrey.shade100, Colors.blueGrey.shade400],
-          ),
+          color: Theme.of(context).colorScheme.surface,
         ),
         padding: const EdgeInsets.all(16),
         child: GridView.count(
@@ -47,15 +42,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               context,
               title: 'المختبرات والأجهزة',
               icon: Icons.science,
-              color: Colors.teal,
+              color: Theme.of(context).colorScheme.primary,
               screen: const LabsScreen(),
-            ),
-            _buildGridItem(
-              context,
-              title: 'الكاميرا الحرة',
-              icon: Icons.camera_alt,
-              color: Colors.blue,
-              screen: const CameraScreen(),
             ),
           ],
         ),
