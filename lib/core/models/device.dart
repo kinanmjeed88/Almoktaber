@@ -17,7 +17,6 @@ class Device {
   String? notes;
 
   late DateTime nextMaintenanceDate;
-  late int maintenanceIntervalMonths;
 
   final lab = IsarLink<Lab>();
 
@@ -30,7 +29,6 @@ class Device {
     required this.testsCount,
     required this.creationDate,
     required this.nextMaintenanceDate,
-    required this.maintenanceIntervalMonths,
     this.notes,
   });
 

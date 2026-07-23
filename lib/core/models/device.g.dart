@@ -22,48 +22,43 @@ const DeviceSchema = CollectionSchema(
       name: r'creationDate',
       type: IsarType.dateTime,
     ),
-    r'maintenanceIntervalMonths': PropertySchema(
-      id: 1,
-      name: r'maintenanceIntervalMonths',
-      type: IsarType.long,
-    ),
     r'materialCost': PropertySchema(
-      id: 2,
+      id: 1,
       name: r'materialCost',
       type: IsarType.double,
     ),
     r'name': PropertySchema(
-      id: 3,
+      id: 2,
       name: r'name',
       type: IsarType.string,
     ),
     r'nextMaintenanceDate': PropertySchema(
-      id: 4,
+      id: 3,
       name: r'nextMaintenanceDate',
       type: IsarType.dateTime,
     ),
     r'notes': PropertySchema(
-      id: 5,
+      id: 4,
       name: r'notes',
       type: IsarType.string,
     ),
     r'phoneNumber': PropertySchema(
-      id: 6,
+      id: 5,
       name: r'phoneNumber',
       type: IsarType.string,
     ),
     r'quantity': PropertySchema(
-      id: 7,
+      id: 6,
       name: r'quantity',
       type: IsarType.long,
     ),
     r'testsCount': PropertySchema(
-      id: 8,
+      id: 7,
       name: r'testsCount',
       type: IsarType.long,
     ),
     r'type': PropertySchema(
-      id: 9,
+      id: 8,
       name: r'type',
       type: IsarType.string,
     )
@@ -114,15 +109,14 @@ void _deviceSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.creationDate);
-  writer.writeLong(offsets[1], object.maintenanceIntervalMonths);
-  writer.writeDouble(offsets[2], object.materialCost);
-  writer.writeString(offsets[3], object.name);
-  writer.writeDateTime(offsets[4], object.nextMaintenanceDate);
-  writer.writeString(offsets[5], object.notes);
-  writer.writeString(offsets[6], object.phoneNumber);
-  writer.writeLong(offsets[7], object.quantity);
-  writer.writeLong(offsets[8], object.testsCount);
-  writer.writeString(offsets[9], object.type);
+  writer.writeDouble(offsets[1], object.materialCost);
+  writer.writeString(offsets[2], object.name);
+  writer.writeDateTime(offsets[3], object.nextMaintenanceDate);
+  writer.writeString(offsets[4], object.notes);
+  writer.writeString(offsets[5], object.phoneNumber);
+  writer.writeLong(offsets[6], object.quantity);
+  writer.writeLong(offsets[7], object.testsCount);
+  writer.writeString(offsets[8], object.type);
 }
 
 Device _deviceDeserialize(
@@ -133,15 +127,14 @@ Device _deviceDeserialize(
 ) {
   final object = Device(
     creationDate: reader.readDateTime(offsets[0]),
-    maintenanceIntervalMonths: reader.readLong(offsets[1]),
-    materialCost: reader.readDouble(offsets[2]),
-    name: reader.readString(offsets[3]),
-    nextMaintenanceDate: reader.readDateTime(offsets[4]),
-    notes: reader.readStringOrNull(offsets[5]),
-    phoneNumber: reader.readString(offsets[6]),
-    quantity: reader.readLong(offsets[7]),
-    testsCount: reader.readLong(offsets[8]),
-    type: reader.readString(offsets[9]),
+    materialCost: reader.readDouble(offsets[1]),
+    name: reader.readString(offsets[2]),
+    nextMaintenanceDate: reader.readDateTime(offsets[3]),
+    notes: reader.readStringOrNull(offsets[4]),
+    phoneNumber: reader.readString(offsets[5]),
+    quantity: reader.readLong(offsets[6]),
+    testsCount: reader.readLong(offsets[7]),
+    type: reader.readString(offsets[8]),
   );
   object.id = id;
   return object;
@@ -157,22 +150,20 @@ P _deviceDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readLong(offset)) as P;
-    case 2:
       return (reader.readDouble(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
-    case 4:
       return (reader.readDateTime(offset)) as P;
-    case 5:
+    case 4:
       return (reader.readStringOrNull(offset)) as P;
-    case 6:
+    case 5:
       return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readLong(offset)) as P;
     case 7:
       return (reader.readLong(offset)) as P;
     case 8:
-      return (reader.readLong(offset)) as P;
-    case 9:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -365,62 +356,6 @@ extension DeviceQueryFilter on QueryBuilder<Device, Device, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<Device, Device, QAfterFilterCondition>
-      maintenanceIntervalMonthsEqualTo(int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'maintenanceIntervalMonths',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Device, Device, QAfterFilterCondition>
-      maintenanceIntervalMonthsGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'maintenanceIntervalMonths',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Device, Device, QAfterFilterCondition>
-      maintenanceIntervalMonthsLessThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'maintenanceIntervalMonths',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Device, Device, QAfterFilterCondition>
-      maintenanceIntervalMonthsBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'maintenanceIntervalMonths',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1217,19 +1152,6 @@ extension DeviceQuerySortBy on QueryBuilder<Device, Device, QSortBy> {
     });
   }
 
-  QueryBuilder<Device, Device, QAfterSortBy> sortByMaintenanceIntervalMonths() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'maintenanceIntervalMonths', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Device, Device, QAfterSortBy>
-      sortByMaintenanceIntervalMonthsDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'maintenanceIntervalMonths', Sort.desc);
-    });
-  }
-
   QueryBuilder<Device, Device, QAfterSortBy> sortByMaterialCost() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'materialCost', Sort.asc);
@@ -1352,19 +1274,6 @@ extension DeviceQuerySortThenBy on QueryBuilder<Device, Device, QSortThenBy> {
     });
   }
 
-  QueryBuilder<Device, Device, QAfterSortBy> thenByMaintenanceIntervalMonths() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'maintenanceIntervalMonths', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Device, Device, QAfterSortBy>
-      thenByMaintenanceIntervalMonthsDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'maintenanceIntervalMonths', Sort.desc);
-    });
-  }
-
   QueryBuilder<Device, Device, QAfterSortBy> thenByMaterialCost() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'materialCost', Sort.asc);
@@ -1469,13 +1378,6 @@ extension DeviceQueryWhereDistinct on QueryBuilder<Device, Device, QDistinct> {
     });
   }
 
-  QueryBuilder<Device, Device, QDistinct>
-      distinctByMaintenanceIntervalMonths() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'maintenanceIntervalMonths');
-    });
-  }
-
   QueryBuilder<Device, Device, QDistinct> distinctByMaterialCost() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'materialCost');
@@ -1539,13 +1441,6 @@ extension DeviceQueryProperty on QueryBuilder<Device, Device, QQueryProperty> {
   QueryBuilder<Device, DateTime, QQueryOperations> creationDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'creationDate');
-    });
-  }
-
-  QueryBuilder<Device, int, QQueryOperations>
-      maintenanceIntervalMonthsProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'maintenanceIntervalMonths');
     });
   }
 

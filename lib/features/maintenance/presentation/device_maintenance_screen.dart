@@ -139,7 +139,7 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
                 await ref.read(maintenanceRepositoryProvider).addLog(newLog, widget.device);
 
                 // Update device next maintenance date
-                final nextDate = DateTime.now().add(Duration(days: widget.device.maintenanceIntervalMonths * 30));
+                final nextDate = DateTime.now().add(const Duration(days: 30));
                 widget.device.nextMaintenanceDate = nextDate;
                 await ref.read(deviceRepositoryProvider).updateDevice(widget.device);
 
