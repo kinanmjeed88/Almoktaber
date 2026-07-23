@@ -23,7 +23,7 @@ class LabsScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.teal.shade100, Colors.teal.shade400],
+            colors: [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)],
           ),
         ),
         child: labsAsync.when(
@@ -48,19 +48,19 @@ class LabsScreen extends ConsumerWidget {
                           ),
                         );
                       },
-                      title: Text(lab.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('الموقع: ${lab.location}'),
+                      title: Text(lab.name, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      subtitle: Text('الموقع: ${lab.location}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                            icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
                             onPressed: () {
                               _showAddLabDialog(context, ref, lab: lab);
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                            icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () => _confirmDeleteLab(context, ref, lab),
                           ),
                         ],
@@ -102,8 +102,17 @@ class LabsScreen extends ConsumerWidget {
     );
 
     if (result == true) {
-      await ref.read(labRepositoryProvider).deleteLab(lab.id);
-      ref.invalidate(labsProvider);
+      try {
+        await ref.read(labRepositoryProvider).deleteLab(lab.id);
+        ref.invalidate(labsProvider);
+        if (context.mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف المختبر بنجاح')));
+        }
+      } catch (e) {
+        if (context.mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ أثناء الحذف: $e')));
+        }
+      }
     }
   }
 
@@ -127,18 +136,27 @@ class LabsScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isNotEmpty && locationController.text.isNotEmpty) {
-                final newLab = Lab(
-                  name: nameController.text,
-                  location: locationController.text,
-                );
-                if (lab != null) {
-                  newLab.id = lab.id;
-                  await ref.read(labRepositoryProvider).updateLab(newLab);
-                } else {
-                  await ref.read(labRepositoryProvider).addLab(newLab);
+                try {
+                  final newLab = Lab(
+                    name: nameController.text,
+                    location: locationController.text,
+                  );
+                  if (lab != null) {
+                    newLab.id = lab.id;
+                    await ref.read(labRepositoryProvider).updateLab(newLab);
+                  } else {
+                    await ref.read(labRepositoryProvider).addLab(newLab);
+                  }
+                  ref.invalidate(labsProvider);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المختبر بنجاح')));
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+                  }
                 }
-                ref.invalidate(labsProvider);
-                if (context.mounted) Navigator.pop(context);
               }
             },
             child: const Text('حفظ'),

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/models/device.dart';
 import '../../../core/models/maintenance_log.dart';
@@ -25,9 +26,43 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text("المعرض"),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text("الكاميرا"),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (source == null) return;
+
+    final XFile? image = await _picker.pickImage(source: source);
     if (image != null && mounted) {
-      _showAddPhotoNoteDialog(image.path);
+      try {
+        final appDir = await getApplicationDocumentsDirectory();
+        final fileName = "${DateTime.now().millisecondsSinceEpoch}.png";
+        final savedImage = await File(image.path).copy("${appDir.path}/$fileName");
+        if (mounted) {
+          _showAddPhotoNoteDialog(savedImage.path);
+        }
+      } catch (e) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الصورة: $e')));
+        }
+      }
     }
   }
 
@@ -50,13 +85,22 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('تخطي/إلغاء')),
           ElevatedButton(
             onPressed: () async {
-              final newPhoto = PhotoRecord(
-                imagePath: imagePath,
-                note: noteController.text.isNotEmpty ? noteController.text : null,
-              );
-              await ref.read(photoRepositoryProvider).addPhotoToDevice(newPhoto, widget.device);
-              ref.invalidate(photosByDeviceProvider(widget.device.id));
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              try {
+                final newPhoto = PhotoRecord(
+                  imagePath: imagePath,
+                  note: noteController.text.isNotEmpty ? noteController.text : null,
+                );
+                await ref.read(photoRepositoryProvider).addPhotoToDevice(newPhoto, widget.device);
+                ref.invalidate(photosByDeviceProvider(widget.device.id));
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت إضافة الصورة بنجاح')));
+                }
+              } catch (e) {
+                 if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+                 }
+              }
             },
             child: const Text('حفظ'),
           ),
@@ -131,30 +175,39 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
           ElevatedButton(
             onPressed: () async {
               if (faultController.text.isNotEmpty && solutionController.text.isNotEmpty) {
-                final newLog = MaintenanceLog(
-                  fault: faultController.text,
-                  solution: solutionController.text,
-                  maintenanceDate: DateTime.now(),
-                );
-                await ref.read(maintenanceRepositoryProvider).addLog(newLog, widget.device);
+                try {
+                  final newLog = MaintenanceLog(
+                    fault: faultController.text,
+                    solution: solutionController.text,
+                    maintenanceDate: DateTime.now(),
+                  );
+                  await ref.read(maintenanceRepositoryProvider).addLog(newLog, widget.device);
 
-                // Update device next maintenance date
-                final nextDate = DateTime.now().add(const Duration(days: 30));
-                widget.device.nextMaintenanceDate = nextDate;
-                await ref.read(deviceRepositoryProvider).updateDevice(widget.device);
+                  // Update device next maintenance date
+                  final nextDate = DateTime.now().add(const Duration(days: 30));
+                  widget.device.nextMaintenanceDate = nextDate;
+                  await ref.read(deviceRepositoryProvider).updateDevice(widget.device);
 
-                // Reschedule notification
-                await NotificationService().scheduleMaintenanceNotification(
-                    id: widget.device.id,
-                    title: 'تذكير بصيانة: ${widget.device.name}',
-                    body: 'حان موعد الصيانة الدورية للجهاز.',
-                    scheduledDate: nextDate,
-                );
+                  // Reschedule notification
+                  await NotificationService().scheduleMaintenanceNotification(
+                      id: widget.device.id,
+                      title: 'تذكير بصيانة: ${widget.device.name}',
+                      body: 'حان موعد الصيانة الدورية للجهاز.',
+                      scheduledDate: nextDate,
+                  );
 
-                ref.invalidate(maintenanceLogsByDeviceProvider(widget.device.id));
-                ref.invalidate(devicesByLabProvider(widget.device.lab.value!.id));
+                  ref.invalidate(maintenanceLogsByDeviceProvider(widget.device.id));
+                  ref.invalidate(devicesByLabProvider(widget.device.lab.value!.id));
 
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تسجيل الصيانة بنجاح')));
+                  }
+                } catch (e) {
+                  if (mounted) {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+                  }
+                }
               }
             },
             child: const Text('حفظ و إعادة جدولة'),
@@ -179,7 +232,7 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.teal.shade50, Colors.teal.shade200],
+            colors: [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)],
           ),
         ),
         child: Column(
@@ -216,7 +269,7 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
                                     padding: const EdgeInsets.all(4.0),
                                     child: Text(
                                       photo.note!,
-                                      style: const TextStyle(fontSize: 10),
+                                      style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -249,11 +302,11 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: GlassMorphism(
                           child: ListTile(
-                            title: Text('العطل: ${log.fault}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('الحل: ${log.solution}\nالتاريخ: ${log.maintenanceDate.toLocal().toString().split(' ')[0]}'),
+                            title: Text('العطل: ${log.fault}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                            subtitle: Text('الحل: ${log.solution}\nالتاريخ: ${log.maintenanceDate.toLocal().toString().split(' ')[0]}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                             isThreeLine: true,
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.redAccent),
+                              icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () => _confirmDeleteLog(log),
                             ),
                           ),

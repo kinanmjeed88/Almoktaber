@@ -46,25 +46,55 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledDate,
+    int advanceWarningDays = 1,
   }) async {
-    await _notificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'maintenance_channel',
-          'Maintenance Notifications',
-          channelDescription: 'Notifications for scheduled device maintenance',
-          importance: Importance.max,
-          priority: Priority.high,
+    final warningDate = scheduledDate.subtract(Duration(days: advanceWarningDays));
+
+    // Schedule advance warning notification
+    if (warningDate.isAfter(DateTime.now())) {
+      await _notificationsPlugin.zonedSchedule(
+        "warning_$id".hashCode, // Distinct ID for advance warning
+        'اقتراب موعد صيانة: $title',
+        'موعد الصيانة الدورية بعد $advanceWarningDays أيام.',
+        tz.TZDateTime.from(warningDate, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'maintenance_warning_channel',
+            'Maintenance Warnings',
+            channelDescription: 'Advance warnings for scheduled device maintenance',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+          ),
         ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
+
+    // Schedule the actual day notification
+    if (scheduledDate.isAfter(DateTime.now())) {
+      await _notificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledDate, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'maintenance_channel',
+            'Maintenance Notifications',
+            channelDescription: 'Notifications for scheduled device maintenance',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
   }
 
   Future<void> cancelNotification(int id) async {
