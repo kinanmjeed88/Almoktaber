@@ -2,15 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/lab.dart';
-import '../../../core/providers/db_provider.dart';
 import '../../../core/theme/glassmorphism.dart';
 import '../data/lab_repository.dart';
-
-final labsProvider = FutureProvider<List<Lab>>((ref) async {
-  ref.watch(refreshProvider); // watch for restore updates
-  final repository = ref.read(labRepositoryProvider);
-  return repository.getAllLabs();
-});
+import 'lab_details_screen.dart';
 
 class LabsScreen extends ConsumerWidget {
   const LabsScreen({super.key});
@@ -46,8 +40,16 @@ class LabsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: GlassMorphism(
                     child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LabDetailsScreen(lab: lab),
+                          ),
+                        );
+                      },
                       title: Text(lab.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('الموقع: ${lab.location} | السعة: ${lab.capacity}'),
+                      subtitle: Text('الموقع: ${lab.location}'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -59,10 +61,7 @@ class LabsScreen extends ConsumerWidget {
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.redAccent),
-                            onPressed: () async {
-                              await ref.read(labRepositoryProvider).deleteLab(lab.id);
-                              ref.invalidate(labsProvider);
-                            },
+                            onPressed: () => _confirmDeleteLab(context, ref, lab),
                           ),
                         ],
                       ),
@@ -85,10 +84,32 @@ class LabsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _confirmDeleteLab(BuildContext context, WidgetRef ref, Lab lab) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد الحذف'),
+        content: Text('هل أنت متأكد من حذف المختبر "${lab.name}"؟ سيتم حذف جميع الأجهزة المرتبطة به أيضاً.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await ref.read(labRepositoryProvider).deleteLab(lab.id);
+      ref.invalidate(labsProvider);
+    }
+  }
+
   void _showAddLabDialog(BuildContext context, WidgetRef ref, {Lab? lab}) {
     final nameController = TextEditingController(text: lab?.name ?? '');
     final locationController = TextEditingController(text: lab?.location ?? '');
-    final capacityController = TextEditingController(text: lab?.capacity.toString() ?? '');
 
     showDialog(
       context: context,
@@ -99,18 +120,16 @@ class LabsScreen extends ConsumerWidget {
           children: [
             TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم')),
             TextField(controller: locationController, decoration: const InputDecoration(labelText: 'الموقع')),
-            TextField(controller: capacityController, decoration: const InputDecoration(labelText: 'السعة'), keyboardType: TextInputType.number),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty && locationController.text.isNotEmpty && capacityController.text.isNotEmpty) {
+              if (nameController.text.isNotEmpty && locationController.text.isNotEmpty) {
                 final newLab = Lab(
                   name: nameController.text,
                   location: locationController.text,
-                  capacity: int.parse(capacityController.text),
                 );
                 if (lab != null) {
                   newLab.id = lab.id;

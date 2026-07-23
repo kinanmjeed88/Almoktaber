@@ -9,6 +9,11 @@ final labRepositoryProvider = Provider<LabRepository>((ref) {
   return LabRepository(isar);
 });
 
+final labsProvider = FutureProvider<List<Lab>>((ref) async {
+  final repository = ref.watch(labRepositoryProvider);
+  return repository.getAllLabs();
+});
+
 class LabRepository {
   final Isar isar;
 

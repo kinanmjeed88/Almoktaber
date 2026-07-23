@@ -3,10 +3,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/providers/db_provider.dart';
+import 'core/services/notification_service.dart';
 import 'features/dashboard/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationService().init();
+  await NotificationService().requestPermissions();
 
   final isar = await initIsar();
 
