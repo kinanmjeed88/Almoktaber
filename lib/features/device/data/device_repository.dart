@@ -1,7 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+
 import 'package:isar/isar.dart';
 
 import '../../../core/models/device.dart';
+import '../../../core/models/maintenance_log.dart';
+import '../../../core/models/photo_record.dart';
 import '../../../core/models/lab.dart';
 import '../../../core/providers/db_provider.dart';
 
@@ -39,7 +43,21 @@ class DeviceRepository {
     await isar.writeTxn(() async {
       final device = await isar.devices.get(id);
       if (device != null) {
-        // Also delete related photos and maintenance logs if needed
+        final photos = await isar.photoRecords.filter().device((q) => q.idEqualTo(id)).findAll();
+        for (var photo in photos) {
+          if (File(photo.imagePath).existsSync()) {
+            File(photo.imagePath).deleteSync();
+          }
+        }
+        if (photos.isNotEmpty) {
+           await isar.photoRecords.deleteAll(photos.map((e) => e.id).toList());
+        }
+
+        final logs = await isar.maintenanceLogs.filter().device((q) => q.idEqualTo(id)).findAll();
+        if (logs.isNotEmpty) {
+            await isar.maintenanceLogs.deleteAll(logs.map((e) => e.id).toList());
+        }
+
         await isar.devices.delete(id);
       }
     });

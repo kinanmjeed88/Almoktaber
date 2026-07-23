@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+
 import 'package:isar/isar.dart';
 
 import '../../../core/models/photo_record.dart';
@@ -45,7 +47,13 @@ class PhotoRepository {
 
   Future<void> deletePhoto(int id) async {
     await isar.writeTxn(() async {
-      await isar.photoRecords.delete(id);
+      final photo = await isar.photoRecords.get(id);
+      if (photo != null) {
+        if (File(photo.imagePath).existsSync()) {
+          File(photo.imagePath).deleteSync();
+        }
+        await isar.photoRecords.delete(id);
+      }
     });
   }
 

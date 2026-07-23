@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/providers/db_provider.dart';
 import 'core/services/notification_service.dart';
+import 'core/theme/app_theme.dart';
 import 'features/dashboard/dashboard_screen.dart';
 
 void main() async {
@@ -31,11 +32,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'نظام إدارة المختبرات',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-        fontFamily: 'Amiri',
-      ),
+      theme: AppTheme.getTheme(),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
