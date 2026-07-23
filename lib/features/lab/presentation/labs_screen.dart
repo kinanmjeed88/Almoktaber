@@ -118,7 +118,7 @@ class LabsScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم')),
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم المختبر')),
             TextField(controller: locationController, decoration: const InputDecoration(labelText: 'الموقع')),
           ],
         ),

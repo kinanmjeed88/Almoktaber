@@ -6,6 +6,7 @@ import '../../../core/models/device.dart';
 import '../../../core/theme/glassmorphism.dart';
 import '../../../core/services/notification_service.dart';
 import '../../device/data/device_repository.dart';
+import '../../device/presentation/add_device_screen.dart';
 import '../../maintenance/presentation/device_maintenance_screen.dart';
 
 class LabDetailsScreen extends ConsumerWidget {
@@ -71,7 +72,12 @@ class LabDetailsScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _showAddDeviceDialog(context, ref);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddDeviceScreen(lab: lab),
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),
@@ -102,94 +108,4 @@ class LabDetailsScreen extends ConsumerWidget {
     }
   }
 
-  void _showAddDeviceDialog(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    final typeController = TextEditingController();
-    final quantityController = TextEditingController();
-    final phoneController = TextEditingController();
-    final materialCostController = TextEditingController();
-    final testsCountController = TextEditingController();
-    final notesController = TextEditingController();
-
-    DateTime nextMaintenance = DateTime.now().add(const Duration(days: 30));
-    int intervalMonths = 1;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('إضافة جهاز جديد'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'اسم الجهاز')),
-                TextField(controller: typeController, decoration: const InputDecoration(labelText: 'نوع الجهاز')),
-                TextField(controller: quantityController, decoration: const InputDecoration(labelText: 'العدد'), keyboardType: TextInputType.number),
-                TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'رقم الهاتف للتواصل'), keyboardType: TextInputType.phone),
-                TextField(controller: materialCostController, decoration: const InputDecoration(labelText: 'تكلفة المواد'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-                TextField(controller: testsCountController, decoration: const InputDecoration(labelText: 'عدد الفحوصات'), keyboardType: TextInputType.number),
-                TextField(controller: notesController, decoration: const InputDecoration(labelText: 'ملاحظات إضافية')),
-                const SizedBox(height: 16),
-                const Text('إعدادات الصيانة', style: TextStyle(fontWeight: FontWeight.bold)),
-                ListTile(
-                  title: const Text('فترة الصيانة (بالأشهر)'),
-                  trailing: DropdownButton<int>(
-                    value: intervalMonths,
-                    items: [1, 3, 6, 12].map((m) => DropdownMenuItem(value: m, child: Text('$m شهر'))).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          intervalMonths = val;
-                          nextMaintenance = DateTime.now().add(Duration(days: val * 30));
-                        });
-                      }
-                    },
-                  ),
-                ),
-                ListTile(
-                  title: const Text('موعد الصيانة القادم'),
-                  subtitle: Text(nextMaintenance.toLocal().toString().split(' ')[0]),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isNotEmpty && typeController.text.isNotEmpty) {
-                  final newDevice = Device(
-                    name: nameController.text,
-                    type: typeController.text,
-                    quantity: int.tryParse(quantityController.text) ?? 1,
-                    phoneNumber: phoneController.text,
-                    materialCost: double.tryParse(materialCostController.text) ?? 0.0,
-                    testsCount: int.tryParse(testsCountController.text) ?? 0,
-                    creationDate: DateTime.now(),
-                    notes: notesController.text.isEmpty ? null : notesController.text,
-                    nextMaintenanceDate: nextMaintenance,
-                    maintenanceIntervalMonths: intervalMonths,
-                  );
-
-                  await ref.read(deviceRepositoryProvider).addDevice(newDevice, lab);
-
-                  await NotificationService().scheduleMaintenanceNotification(
-                    id: newDevice.id,
-                    title: 'تذكير بصيانة: ${newDevice.name}',
-                    body: 'حان موعد الصيانة الدورية للجهاز الموجود في ${lab.name}.',
-                    scheduledDate: newDevice.nextMaintenanceDate,
-                  );
-
-                  ref.invalidate(devicesByLabProvider(lab.id));
-                  if (context.mounted) Navigator.pop(context);
-                }
-              },
-              child: const Text('حفظ'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
