@@ -8,14 +8,23 @@ import '../../../core/services/notification_service.dart';
 import '../../device/data/device_repository.dart';
 import '../../device/presentation/add_device_screen.dart';
 import '../../maintenance/presentation/device_maintenance_screen.dart';
+import '../../../features/dashboard/analytics_screen.dart';
 
-class LabDetailsScreen extends ConsumerWidget {
+class LabDetailsScreen extends ConsumerStatefulWidget {
   final Lab lab;
 
   const LabDetailsScreen({super.key, required this.lab});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LabDetailsScreen> createState() => _LabDetailsScreenState();
+}
+
+class _LabDetailsScreenState extends ConsumerState<LabDetailsScreen> {
+  int? _expandedDeviceId;
+
+  @override
+  Widget build(BuildContext context) {
+    final lab = widget.lab;
     final devicesAsync = ref.watch(devicesByLabProvider(lab.id));
 
     return Scaffold(
@@ -46,12 +55,9 @@ class LabDetailsScreen extends ConsumerWidget {
                   child: GlassMorphism(
                     child: InkWell(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DeviceMaintenanceScreen(device: device),
-                          ),
-                        );
+                        setState(() {
+                          _expandedDeviceId = _expandedDeviceId == device.id ? null : device.id;
+                        });
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -67,22 +73,56 @@ class LabDetailsScreen extends ConsumerWidget {
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _confirmDeleteDevice(context, ref, device),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
+                                      tooltip: 'الصيانة والتفاصيل',
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => DeviceMaintenanceScreen(device: device),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AddDeviceScreen(lab: lab, device: device),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _confirmDeleteDevice(context, ref, device),
+                                    ),
+                                    Icon(
+                                      _expandedDeviceId == device.id ? Icons.expand_less : Icons.expand_more,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Text('النوع: ${device.type} | العدد: ${device.quantity}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                            Text('رقم الهاتف: ${device.phoneNumber}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                            Text('سعر المواد: ${device.materialCost}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                            Text('عدد الفحوصات: ${device.testsCount}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                            Text('تاريخ الإنشاء: ${device.creationDate.toLocal().toString().split(' ')[0]}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                            Text('موعد الصيانة القادم: ${device.nextMaintenanceDate.toLocal().toString().split(' ')[0]}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                            if (device.notes != null && device.notes!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text('ملاحظات: ${device.notes}', style: TextStyle(fontStyle: FontStyle.italic, color: Theme.of(context).colorScheme.onSurface)),
+                            if (_expandedDeviceId == device.id) ...[
+                              Text('رقم الهاتف: ${device.phoneNumber}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                              Text('سعر المواد: ${device.materialCost}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                              Text('عدد الفحوصات: ${device.testsCount}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                              Text('تاريخ الإنشاء: ${device.creationDate.toLocal().toString().split(' ')[0]}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                              Text('موعد الصيانة القادم: ${device.nextMaintenanceDate.toLocal().toString().split(' ')[0]}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                              if (device.notes != null && device.notes!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text('ملاحظات: ${device.notes}', style: TextStyle(fontStyle: FontStyle.italic, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
                             ],
                           ],
                         ),
@@ -132,7 +172,8 @@ class LabDetailsScreen extends ConsumerWidget {
       try {
         await ref.read(deviceRepositoryProvider).deleteDevice(device.id);
         NotificationService().cancelNotification(device.id);
-        ref.invalidate(devicesByLabProvider(lab.id));
+        ref.invalidate(devicesByLabProvider(widget.lab.id));
+        ref.invalidate(analyticsProvider);
         if (context.mounted) {
            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف الجهاز بنجاح')));
         }

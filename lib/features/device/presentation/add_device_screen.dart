@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/models/device.dart';
 import '../../../core/models/lab.dart';
 import '../data/device_repository.dart';
+import '../../../features/dashboard/analytics_screen.dart';
 
 class AddDeviceScreen extends ConsumerStatefulWidget {
   final Lab lab;
@@ -28,6 +31,7 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
 
   DateTime _creationDate = DateTime.now();
   DateTime _nextMaintenanceDate = DateTime.now().add(const Duration(days: 30));
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -55,6 +59,16 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
     _testsCountController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate, ValueChanged<DateTime> onDateSelected) async {
@@ -101,6 +115,7 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
         }
 
         ref.invalidate(devicesByLabProvider(widget.lab.id));
+        ref.invalidate(analyticsProvider);
 
         if (mounted) {
           Navigator.pop(context);
@@ -191,6 +206,17 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
                   subtitle: Text(_nextMaintenanceDate.toLocal().toString().split(' ')[0]),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () => _selectDate(context, _nextMaintenanceDate, (date) => setState(() => _nextMaintenanceDate = date)),
+                ),
+                const SizedBox(height: 12),
+                if (_selectedImage != null)
+                  Image.file(_selectedImage!, height: 150, fit: BoxFit.cover),
+                ElevatedButton.icon(
+                  onPressed: _pickImage,
+                  icon: const Icon(Icons.image),
+                  label: const Text('إرفاق صورة (اختياري)'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
