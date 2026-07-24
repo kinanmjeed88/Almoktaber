@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import "../../photo/presentation/full_screen_image_viewer.dart";
 
 import '../../../core/models/device.dart';
 import '../../../core/models/maintenance_log.dart';
@@ -78,12 +79,28 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
     final faultController = TextEditingController(text: log?.fault ?? '');
     final solutionController = TextEditingController(text: log?.solution ?? '');
     File? selectedImage;
+    PhotoRecord? existingPhoto;
+    bool isInit = true;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('تسجيل صيانة جديدة'),
+        builder: (context, setState) {
+          if (isInit && log != null) {
+            isInit = false;
+            ref.read(photoRepositoryProvider).getPhotosByLogId(log.id).then((photos) {
+              if (photos.isNotEmpty && context.mounted) {
+                setState(() {
+                  existingPhoto = photos.first;
+                  selectedImage = File(existingPhoto!.imagePath);
+                });
+              }
+            });
+          } else if (isInit) {
+             isInit = false;
+          }
+          return AlertDialog(
+          title: Text(log == null ? 'تسجيل صيانة جديدة' : 'تعديل صيانة'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -129,7 +146,11 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
                     targetLog = newLog;
                   }
 
-                  if (selectedImage != null) {
+                  if (selectedImage != null && (existingPhoto == null || selectedImage!.path != existingPhoto!.imagePath)) {
+                    if (existingPhoto != null) {
+                      await ref.read(photoRepositoryProvider).deletePhoto(existingPhoto!.id);
+                    }
+
                     final directory = await getApplicationDocumentsDirectory();
                     final imageId = const Uuid().v4();
                     final String path = '${directory.path}/$imageId.jpg';
@@ -173,7 +194,8 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
             child: const Text('حفظ و إعادة جدولة'),
           ),
         ],
-      ),
+        );
+      },
       ),
     );
   }
@@ -276,6 +298,38 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
+                                      Consumer(
+                                        builder: (context, ref, _) {
+                                          return FutureBuilder<List<PhotoRecord>>(
+                                            future: ref.read(photoRepositoryProvider).getPhotosByLogId(log.id),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) => FullScreenImageViewer(
+                                                          imagePath: snapshot.data!.first.imagePath,
+                                                          note: snapshot.data!.first.note,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.only(left: 12.0),
+                                                    child: ClipRRect(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      child: Image.file(File(snapshot.data!.first.imagePath), width: 50, height: 50, fit: BoxFit.cover),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                              return const SizedBox.shrink();
+                                            },
+                                          );
+                                        },
+                                      ),
                                       Expanded(
                                         child: Text(
                                           'العطل: ${log.fault}',
@@ -334,6 +388,7 @@ class _DeviceMaintenanceScreenState extends ConsumerState<DeviceMaintenanceScree
           ),
         ],
       ),
+
     );
   }
 }
