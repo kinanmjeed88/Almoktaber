@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/device.dart';
 import '../models/lab.dart';
 import '../models/maintenance_log.dart';
+import "../models/phone_record.dart";
 import '../models/photo_record.dart';
 
 class BackupService {
@@ -20,6 +21,7 @@ class BackupService {
     final devices = await isar.devices.where().findAll();
     final logs = await isar.maintenanceLogs.where().findAll();
     final photos = await isar.photoRecords.where().findAll();
+    final phoneRecords = await isar.phoneRecords.where().findAll();
 
     final data = {
       'labs': labs.map((l) => {
@@ -54,6 +56,11 @@ class BackupService {
         'deviceId': p.device.value?.id,
         'logId': p.maintenanceLog.value?.id,
       }).toList(),
+      "phone_records": phoneRecords.map((pr) => {
+        "labName": pr.labName,
+        "phoneNumber": pr.phoneNumber,
+        "province": pr.province,
+      }).toList(),
     };
 
     final jsonString = jsonEncode(data);
@@ -80,6 +87,15 @@ class BackupService {
         final lab = Lab(name: l['name'], location: l['location'])..id = l['id'];
         labMap[lab.id] = lab;
         await isar.labs.put(lab);
+      }
+      final phoneRecordsData = data["phone_records"] as List<dynamic>? ?? [];
+      for (var pr in phoneRecordsData) {
+        final phoneRecord = PhoneRecord(
+          labName: pr["labName"],
+          phoneNumber: pr["phoneNumber"],
+          province: pr["province"],
+        );
+        await isar.phoneRecords.put(phoneRecord);
       }
 
       final devicesData = data['devices'] as List<dynamic>? ?? [];

@@ -60,4 +60,8 @@ class PhotoRepository {
   Future<List<PhotoRecord>> getPhotosByDeviceId(int deviceId) async {
     return await isar.photoRecords.filter().device((q) => q.idEqualTo(deviceId)).findAll();
   }
+
+  Future<List<PhotoRecord>> getPhotosByLogId(int logId) async {
+    return await isar.photoRecords.filter().maintenanceLog((q) => q.idEqualTo(logId)).findAll();
+  }
 }

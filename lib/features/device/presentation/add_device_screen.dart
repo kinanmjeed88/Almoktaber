@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import "package:path_provider/path_provider.dart";
+import "package:uuid/uuid.dart";
 
+import "../../../core/models/photo_record.dart";
+
+import "../../photo/data/photo_repository.dart";
 import '../../../core/models/device.dart';
 import '../../../core/models/lab.dart';
 import '../data/device_repository.dart';
@@ -32,6 +37,7 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
   DateTime _creationDate = DateTime.now();
   DateTime _nextMaintenanceDate = DateTime.now().add(const Duration(days: 30));
   File? _selectedImage;
+  PhotoRecord? _existingPhoto;
 
   @override
   void initState() {
@@ -46,6 +52,20 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
       _notesController.text = widget.device!.notes ?? '';
       _creationDate = widget.device!.creationDate;
       _nextMaintenanceDate = widget.device!.nextMaintenanceDate;
+    }
+
+    _loadExistingPhoto();
+  }
+
+  Future<void> _loadExistingPhoto() async {
+    if (widget.device != null) {
+      final photos = await ref.read(photoRepositoryProvider).getPhotosByDeviceId(widget.device!.id);
+      if (photos.isNotEmpty) {
+        setState(() {
+          _existingPhoto = photos.first;
+          _selectedImage = File(_existingPhoto!.imagePath);
+        });
+      }
     }
   }
 
@@ -98,6 +118,21 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
           widget.device!.notes = _notesController.text.isEmpty ? null : _notesController.text;
 
           await ref.read(deviceRepositoryProvider).updateDevice(widget.device!);
+
+          if (_selectedImage != null && (_existingPhoto == null || _selectedImage!.path != _existingPhoto!.imagePath)) {
+            if (_existingPhoto != null) {
+              await ref.read(photoRepositoryProvider).deletePhoto(_existingPhoto!.id);
+            }
+            final directory = await getApplicationDocumentsDirectory();
+            final imageId = const Uuid().v4();
+            final String path = '${directory.path}/$imageId.jpg';
+            final savedImage = await _selectedImage!.copy(path);
+            final photo = PhotoRecord(
+              imagePath: savedImage.path,
+              note: 'صورة الجهاز: ${widget.device!.name}',
+            );
+            await ref.read(photoRepositoryProvider).addPhotoToDevice(photo, widget.device!);
+          }
         } else {
           final newDevice = Device(
             name: _nameController.text,
@@ -112,6 +147,18 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
           );
 
           await ref.read(deviceRepositoryProvider).addDevice(newDevice, widget.lab);
+
+          if (_selectedImage != null) {
+            final directory = await getApplicationDocumentsDirectory();
+            final imageId = const Uuid().v4();
+            final String path = '${directory.path}/$imageId.jpg';
+            final savedImage = await _selectedImage!.copy(path);
+            final photo = PhotoRecord(
+              imagePath: savedImage.path,
+              note: 'صورة الجهاز: ${newDevice.name}',
+            );
+            await ref.read(photoRepositoryProvider).addPhotoToDevice(photo, newDevice);
+          }
         }
 
         ref.invalidate(devicesByLabProvider(widget.lab.id));

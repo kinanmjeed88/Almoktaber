@@ -8,6 +8,7 @@ import 'analytics_screen.dart';
 import '../../core/theme/glassmorphism.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/backup_service.dart';
+import "../phone_directory/presentation/phone_directory_screen.dart";
 import '../../core/providers/db_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -96,6 +97,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.analytics,
               color: Theme.of(context).colorScheme.primary,
               screen: const AnalyticsScreen(),
+            ),
+            _buildGridItem(
+              context,
+              title: 'دليل الهواتف',
+              icon: Icons.contact_phone_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              screen: const PhoneDirectoryScreen(),
             ),
           ],
         ),
