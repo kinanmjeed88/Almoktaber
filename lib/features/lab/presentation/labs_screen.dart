@@ -5,6 +5,7 @@ import '../../../core/models/lab.dart';
 import '../../../core/theme/glassmorphism.dart';
 import '../data/lab_repository.dart';
 import 'lab_details_screen.dart';
+import '../../../features/dashboard/analytics_screen.dart';
 
 class LabsScreen extends ConsumerWidget {
   const LabsScreen({super.key});
@@ -105,6 +106,7 @@ class LabsScreen extends ConsumerWidget {
       try {
         await ref.read(labRepositoryProvider).deleteLab(lab.id);
         ref.invalidate(labsProvider);
+        ref.invalidate(analyticsProvider);
         if (context.mounted) {
            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف المختبر بنجاح')));
         }
@@ -148,6 +150,7 @@ class LabsScreen extends ConsumerWidget {
                     await ref.read(labRepositoryProvider).addLab(newLab);
                   }
                   ref.invalidate(labsProvider);
+                  ref.invalidate(analyticsProvider);
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المختبر بنجاح')));
